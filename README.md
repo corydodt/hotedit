@@ -2,13 +2,13 @@
 
 ## Install
 
-```
+```shell
 pip install hotedit
 ```
 
 ## Use
 
-```
+```python
 import requests
 
 from hotedit import hotedit
