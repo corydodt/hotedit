@@ -10,6 +10,9 @@ pytest = { version = "^5.2", optional = true }
 pytest-cov = { version = "^3.0.0", optional = true }
 pytest-flakes = { version = "^4.0.5", optional = true }
 
+[tool.poetry.dev-dependencies]
+black = "^22.1.0"
+
 [tool.poetry.extras]
 test = [ "pytest", "pytest-coverage", "pytest-flakes" ]
 
