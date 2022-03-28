@@ -1,0 +1,6 @@
+__pycache__
+/.tox
+/.local
+/.cache
+/.rustup
+/.coverage
