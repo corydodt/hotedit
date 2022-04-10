@@ -5,7 +5,7 @@ description = "Automatically find and launch an editor with a stream of text to 
 authors = ["Cory Dodt <corydodt@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">= 3.6.2, <4"
 pytest = { version = "^5.2", optional = true }
 pytest-cov = { version = "^3.0.0", optional = true }
 pytest-flakes = { version = "^4.0.5", optional = true }
