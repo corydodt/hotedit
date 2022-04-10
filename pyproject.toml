@@ -2,7 +2,7 @@
 name = "hotedit"
 version = "0.9.0"
 description = "Automatically find and launch an editor with a stream of text to edit; then save"
-authors = ["Cory Dodt <corydodt@gmail.com>"]
+authors = ["Cory Dodt <121705+corydodt@users.noreply.github.com>"]
 
 [tool.poetry.dependencies]
 python = ">= 3.6.2, <4"
