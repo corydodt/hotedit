@@ -197,12 +197,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 Versioning].
 </details>
 
-### versions [0.9.0]
+### versions [0.9.1]
 
-- with changes listed; you should read [Keep a Changelog]
+- Initial public release.
+- Automated builds, automated tests.
 
 
-[Unreleased]: https://github.com/corydodt/hotedit/compare/v0.0..HEAD
+[Unreleased]: https://github.com/corydodt/hotedit/compare/v0.9.1..HEAD
+[0.9.1]:        https://github.com/corydodt/hotedit/compare/v0.0..v0.9.1
 [0.0]:        https://github.com/corydodt/hotedit/tree/v0.0
 
 
