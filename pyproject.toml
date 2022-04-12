@@ -1,17 +1,26 @@
 [tool.poetry]
 name = "hotedit"
-version = "0.9.0"
+version = "0.9.1"
 description = "Automatically find and launch an editor with a stream of text to edit; then save"
-authors = ["Cory Dodt <corydodt@gmail.com>"]
+authors = ["Cory Dodt <121705+corydodt@users.noreply.github.com>"]
+packages = [
+    { include = "hotedit", from = "src"},
+    { include =  "tests", format = "sdist" },
+    ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
-pytest = { version = "^5.2", optional = true }
+python = ">= 3.6.2, <4"
+
+# These optional deps will not be installed, unless you do
+#   poetry install -E test  (in your poetry shell)
+# This approach is compatible with the `extras` property in tox.ini.
+pytest = { version = "^6.2", optional = true }
 pytest-cov = { version = "^3.0.0", optional = true }
 pytest-flakes = { version = "^4.0.5", optional = true }
 
 [tool.poetry.dev-dependencies]
 black = "^22.1.0"
+tox = "^3.24.5"
 
 [tool.poetry.extras]
 test = [ "pytest", "pytest-coverage", "pytest-flakes" ]

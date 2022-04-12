@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# print a version string that's useful to us by examining github tags
+
+set -euo pipefail
+IFS=$'\n\t'
+
+git-describe() {
+    ret=$(git describe --tags --abbrev=0 --match 'v*' "$@" 2>/dev/null)
+    # strip the `v` from the version as stored in the tags
+    echo ${ret#v}
+}
+
+version="$(git-describe --exact-match || true)"
+if [[ "$version" == "" ]]; then
+    version="$(git-describe)~wip"
+fi
+
+echo "$version"
