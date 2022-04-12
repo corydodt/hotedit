@@ -5,8 +5,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-set -x
-
 ver="$1"
 token="$2"
 shift; shift
