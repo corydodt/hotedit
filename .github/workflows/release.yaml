@@ -9,6 +9,9 @@ jobs:
         with:
           fetch-depth: 0  # all branches and tags; needed for version string
 
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
       - name: Print the describe-version
         run: |
           echo "::notice::output of describe-version for this branch: $(tools/describe-version)"
