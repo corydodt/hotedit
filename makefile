@@ -2,7 +2,7 @@
 
 SHELL             := /usr/bin/bash
 PROG              := hotedit
-SOURCES           := src/**/*.py tests/*.py pyproject.toml poetry.lock pytest.ini tox.ini
+SOURCES           := src/**/*.py test/*.py pyproject.toml poetry.lock pytest.ini tox.ini
 TAGGED_VERSION    := $(shell tools/describe-version)
 PYPROJECT_VERSION := $(shell poetry version -s)
 SDIST             := dist/$(PROG)-$(PYPROJECT_VERSION).tar.gz
@@ -28,3 +28,7 @@ clean:
 
 test:
 	tox
+
+format:
+	black src test
+	isort src test
