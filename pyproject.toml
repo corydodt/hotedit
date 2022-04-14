@@ -8,6 +8,8 @@ packages = [
     { include = "test", format = "sdist" },
     ]
 readme = "README.md"
+homepage = "https://github.com/corydodt/hotedit"
+repository = "https://github.com/corydodt/hotedit"
 
 [tool.poetry.dependencies]
 python = ">= 3.6.2, <4"
