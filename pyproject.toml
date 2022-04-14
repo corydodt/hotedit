@@ -5,7 +5,7 @@ description = "Automatically find and launch an editor with a stream of text to 
 authors = ["Cory Dodt <121705+corydodt@users.noreply.github.com>"]
 packages = [
     { include = "hotedit", from = "src" },
-    { include = "tests", format = "sdist" },
+    { include = "test", format = "sdist" },
     ]
 readme = "README.md"
 
@@ -21,6 +21,7 @@ pytest-flakes = { version = "^4.0.5", optional = true }
 
 [tool.poetry.dev-dependencies]
 black = "^22.1.0"
+isort = "^5.10.1"
 tox = "^3.24.5"
 
 [tool.poetry.extras]
@@ -29,3 +30,7 @@ test = [ "pytest", "pytest-coverage", "pytest-flakes" ]
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+lines_after_imports = 2
