@@ -2,6 +2,7 @@ use git2;
 use shlex;
 use std::env;
 use std::error::Error;
+use std::fmt;
 use std::io::{Read, Write};
 use std::process;
 use std::process::Command;
@@ -30,6 +31,17 @@ fn main() {
     }
 }
 
+#[derive(Debug)]
+struct UnchangedError;
+
+impl Error for UnchangedError {}
+
+impl fmt::Display for UnchangedError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "editing operation did not change the contents")
+    }
+}
+
 type EditorFindFn = fn() -> Result<String, &'static str>;
 
 struct HotEdit<'he> {
@@ -53,7 +65,10 @@ fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
 fn harvest_tempfile<'a>(mut tf: NamedTempFile) -> Result<String, Box<dyn Error>> {
     let mut buffer = String::new();
     let _ = tf.read_to_string(&mut buffer)?;
-    tf.close()?;
+    {
+        // TODO: delete_temp
+        tf.close()?;
+    }
     Ok(buffer)
 }
 
@@ -89,7 +104,7 @@ impl<'he> HotEdit<'he> {
         let ret = harvest_tempfile(tf)?;
         if self.validate_unchanged {
             if self.initial.eq(&ret) {
-                return Err(Box::from("editing operation did not change the contents"));
+                return Err(Box::from(UnchangedError));
             }
         }
         Ok(ret)
