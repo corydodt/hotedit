@@ -1,10 +1,11 @@
 use git2;
 use shlex;
 use std::env;
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::error::Error;
+use std::io::{Read, Write};
 use std::process;
 use std::process::Command;
-use tempfile;
+use tempfile::NamedTempFile;
 
 // const TEMP_EXT: &str = ".hotedit";
 // const EDITOR_FALLBACK: &str = "vi";
@@ -38,6 +39,24 @@ struct HotEdit<'he> {
     find_editor: EditorFindFn,
 }
 
+// create a named tempfile and seed it with initial text
+fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
+    let mut ret = match NamedTempFile::new() {
+        Ok(x) => x,
+        Err(_) => return Err(Box::from("Couldn't create tempfile")),
+    };
+    ret.write(initial.as_bytes())?;
+    Ok(ret)
+}
+
+// return the contents of the tempfile and clean it up
+fn harvest_tempfile<'a>(mut tf: NamedTempFile) -> Result<String, Box<dyn Error>> {
+    let mut buffer = String::new();
+    let _ = tf.read_to_string(&mut buffer)?;
+    tf.close()?;
+    Ok(buffer)
+}
+
 impl<'he> HotEdit<'he> {
     fn new(initial: &String) -> HotEdit {
         HotEdit {
@@ -48,67 +67,33 @@ impl<'he> HotEdit<'he> {
         }
     }
 
-    fn invoke(&self) -> Result<String, &'static str> {
-        let editor = (self.find_editor)();
-        let editor = match editor {
-            Ok(s) => s,
-            Err(e) => {
-                return Err(e);
-            }
-        };
-        let mut argv = if let Some(r) = shlex::split(&editor) {
-            r
-        } else {
-            return Err("couldn't split editor args");
+    fn invoke(&self) -> Result<String, Box<dyn Error>> {
+        let editor = (self.find_editor)()?;
+        let mut argv = match shlex::split(&editor) {
+            Some(r) => r,
+            None => return Err(Box::from("couldn't split editor args")),
         };
         if argv.len() < 1 {
-            return Err("empty command string");
+            return Err(Box::from("empty command string"));
         }
 
         let mut cmd: Command;
         cmd = Command::new(argv.remove(0));
 
-        // inject intial into a temp file
-        let mut tf = if let Ok(r) = tempfile::NamedTempFile::new() {
-            r
-        } else {
-            return Err("couldn't create temp file");
-        };
-
-        // println!("TEMP {}", tf.path().to_str().unwrap());
-
-        tf.write(self.initial.as_bytes()).unwrap();
+        let tf = seed_tempfile(self.initial)?;
         argv.push(tf.path().to_str().unwrap().to_owned());
 
         cmd.args(argv);
-        if let Err(_) = cmd.status() {
-            return Err("editor exited with an error (rc != 0)");
-        }
+        cmd.status()?;
 
-        // read from temp file
-        if let Err(_) = tf.seek(SeekFrom::Start(0)) {
-            return Err("couldn't seek in tempfile");
-        }
-        let mut buffer = Vec::new();
-        if let Err(_) = tf.read_to_end(&mut buffer) {
-            return Err("couldn't read tempfile after save");
-        }
-        if let Err(_) = tf.close() {
-            return Err("couldn't delete tempfile");
-        }
-        match String::from_utf8(buffer) {
-            Ok(s) => Ok(s),
-            Err(_) => Err("couldn't convert edited file as utf-8"),
-        }
+        harvest_tempfile(tf)
     }
 }
 
 fn read_git_editor() -> Option<String> {
     let cfg = match git2::Config::open_default() {
         Ok(c) => c,
-        Err(_) => {
-            return None;
-        }
+        Err(_) => return None,
     };
 
     let ret = match cfg.get_entry("core.editor") {
