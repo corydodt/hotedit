@@ -86,7 +86,13 @@ impl<'he> HotEdit<'he> {
         cmd.args(argv);
         cmd.status()?;
 
-        harvest_tempfile(tf)
+        let ret = harvest_tempfile(tf)?;
+        if self.validate_unchanged {
+            if self.initial.eq(&ret) {
+                return Err(Box::from("editing operation did not change the contents"));
+            }
+        }
+        Ok(ret)
     }
 }
 
