@@ -62,11 +62,12 @@ fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
 }
 
 // return the contents of the tempfile and clean it up
-fn harvest_tempfile<'a>(mut tf: NamedTempFile) -> Result<String, Box<dyn Error>> {
+fn harvest_tempfile<'a>(mut tf: NamedTempFile, persist: bool) -> Result<String, Box<dyn Error>> {
     let mut buffer = String::new();
-    let _ = tf.read_to_string(&mut buffer)?;
-    {
-        // TODO: delete_temp
+    tf.read_to_string(&mut buffer)?;
+    if persist {
+        tf.keep()?;
+    } else {
         tf.close()?;
     }
     Ok(buffer)
@@ -101,7 +102,7 @@ impl<'he> HotEdit<'he> {
         cmd.args(argv);
         cmd.status()?;
 
-        let ret = harvest_tempfile(tf)?;
+        let ret = harvest_tempfile(tf, !self.delete_temp)?;
         if self.validate_unchanged {
             if self.initial.eq(&ret) {
                 return Err(Box::from(UnchangedError));
