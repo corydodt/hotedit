@@ -6,10 +6,10 @@ use std::fmt;
 use std::io::{Read, Write};
 use std::process;
 use std::process::Command;
-use tempfile::NamedTempFile;
+use tempfile::{Builder, NamedTempFile};
 
-// const TEMP_EXT: &str = ".hotedit";
-// const EDITOR_FALLBACK: &str = "vi";
+const TEMP_EXT: &str = ".hotedit";
+const EDITOR_FALLBACK: &str = "vi";
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -42,7 +42,7 @@ impl fmt::Display for UnchangedError {
     }
 }
 
-type EditorFindFn = fn() -> Result<String, &'static str>;
+type EditorFindFn = fn() -> Result<String, Box<dyn Error>>;
 
 struct HotEdit<'he> {
     initial: &'he String,
@@ -53,16 +53,13 @@ struct HotEdit<'he> {
 
 // create a named tempfile and seed it with initial text
 fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
-    let mut ret = match NamedTempFile::new() {
-        Ok(x) => x,
-        Err(_) => return Err(Box::from("Couldn't create tempfile")),
-    };
+    let mut ret = Builder::new().suffix(TEMP_EXT).tempfile()?;
     ret.write(initial.as_bytes())?;
     Ok(ret)
 }
 
 // return the contents of the tempfile and clean it up
-fn harvest_tempfile<'a>(mut tf: NamedTempFile, persist: bool) -> Result<String, Box<dyn Error>> {
+fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> Result<String, Box<dyn Error>> {
     let mut buffer = String::new();
     tf.read_to_string(&mut buffer)?;
     if persist {
@@ -131,7 +128,7 @@ fn read_git_editor() -> Option<String> {
     ret
 }
 
-fn determine_editor(/* TODO fallback */) -> Result<String, &'static str> {
+fn determine_editor() -> Result<String, Box<dyn Error>> {
     if let Some(ret) = read_git_editor() {
         return Ok(ret);
     }
@@ -141,6 +138,5 @@ fn determine_editor(/* TODO fallback */) -> Result<String, &'static str> {
     if let Ok(ret) = env::var("VISUAL") {
         return Ok(ret);
     }
-    // TODO fallback
-    Err("No editor found (checked git, $EDITOR and $VISUAL)")
+    Ok(String::from(EDITOR_FALLBACK))
 }
