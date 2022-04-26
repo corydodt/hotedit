@@ -3,9 +3,12 @@ name = "hotedit"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "hotedit"
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 git2 = "0.14.2"
 shlex = "1.1.0" 
 tempfile = "3.3.0"
+pyo3 = { version = "0.16.3", features = ["extension-module"] }

@@ -7,6 +7,8 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::process::Command;
 use tempfile::{Builder, NamedTempFile};
 
+mod hoteditpy;
+
 const TEMP_EXT: &str = ".hotedit";
 const EDITOR_FALLBACK: &str = "vi";
 
