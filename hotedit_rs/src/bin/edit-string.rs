@@ -5,7 +5,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
         println!("** not enough arguments");
-        process::exit(0);
+        process::exit(1);
     }
     let hehe = HotEdit::new(&args[1]);
     match hehe.invoke() {
@@ -16,7 +16,7 @@ fn main() {
         }
         Err(e) => {
             println!("** bad edit: {}", e);
-            process::exit(0);
+            process::exit(1);
         }
     }
 }
