@@ -1,7 +1,5 @@
 //! # The HotEdit crate
 
-use git2;
-use shlex;
 use std::env;
 use std::error::Error;
 use std::fmt;
@@ -33,7 +31,7 @@ pub type EditorFindFn = fn() -> Result<String, Box<dyn Error>>;
 /// create a named tempfile and seed it with initial text
 fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
     let mut ret = Builder::new().suffix(TEMP_EXT).tempfile()?;
-    ret.write(initial.as_bytes())?;
+    ret.write_all(initial.as_bytes())?;
     Ok(ret)
 }
 
@@ -81,12 +79,11 @@ impl HotEdit {
             Some(r) => r,
             None => return Err(Box::from("couldn't split editor args")),
         };
-        if argv.len() < 1 {
+        if argv.is_empty() {
             return Err(Box::from("empty command string"));
         }
 
-        let mut cmd: Command;
-        cmd = Command::new(argv.remove(0));
+        let mut cmd = Command::new(argv.remove(0));
 
         let tf = seed_tempfile(initial)?;
         argv.push(tf.path().to_str().unwrap().to_owned());
@@ -95,10 +92,8 @@ impl HotEdit {
         cmd.status()?;
 
         let ret = harvest_tempfile(tf, !self.delete_temp)?;
-        if self.validate_unchanged {
-            if initial.eq(&ret) {
-                return Err(Box::from(UnchangedError));
-            }
+        if self.validate_unchanged && initial.eq(&ret) {
+            return Err(Box::from(UnchangedError));
         }
         Ok(ret)
     }
@@ -111,13 +106,7 @@ fn read_git_editor() -> Option<String> {
     };
 
     let ret = match cfg.get_entry("core.editor") {
-        Ok(editor) => {
-            if let Some(v) = editor.value() {
-                Some(String::from(v))
-            } else {
-                None
-            }
-        }
+        Ok(editor) => editor.value().map(String::from),
         Err(_) => None,
     };
     ret
