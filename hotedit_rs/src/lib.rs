@@ -1,3 +1,5 @@
+//! # The HotEdit crate
+
 use git2;
 use shlex;
 use std::env;
@@ -10,8 +12,12 @@ use tempfile::{Builder, NamedTempFile};
 const TEMP_EXT: &str = ".hotedit";
 const EDITOR_FALLBACK: &str = "vi";
 
+/// An editing operation that didn't change the input text
+///
+/// This may optionally be considered an error by the invoking
+/// program.
 #[derive(Debug)]
-struct UnchangedError;
+pub struct UnchangedError;
 
 impl Error for UnchangedError {}
 
@@ -21,16 +27,19 @@ impl fmt::Display for UnchangedError {
     }
 }
 
-type EditorFindFn = fn() -> Result<String, Box<dyn Error>>;
+/// zero-arg function to find an editor command and return it
+pub type EditorFindFn = fn() -> Result<String, Box<dyn Error>>;
 
-// create a named tempfile and seed it with initial text
+/// create a named tempfile and seed it with initial text
 fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
     let mut ret = Builder::new().suffix(TEMP_EXT).tempfile()?;
     ret.write(initial.as_bytes())?;
     Ok(ret)
 }
 
-// return the contents of the tempfile and clean it up
+/// return the contents of the tempfile and clean it up
+///
+/// With `persist`, at the end of the operation, keep the file instead of deleting.
 fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> Result<String, Box<dyn Error>> {
     let mut buffer = String::new();
     tf.seek(SeekFrom::Start(0))?;
@@ -43,6 +52,13 @@ fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> Result<String, Box<
     Ok(buffer)
 }
 
+/// A HotEdit operation
+///
+///   1. Search predefined places for an editor
+///   2. Launch the editor with the caller's specified initial text in a buffer
+///   3. Wait for user to edit
+///   4. Return the new text to the caller
+///   5. (optionally) Delete the temp file.
 pub struct HotEdit<'he> {
     initial: &'he String,
     validate_unchanged: bool,
@@ -60,6 +76,7 @@ impl<'he> HotEdit<'he> {
         }
     }
 
+    /// Invoke the hotedit operation, causing the editor to launch with initial text
     pub fn invoke(&self) -> Result<String, Box<dyn Error>> {
         let editor = (self.find_editor)()?;
         let mut argv = match shlex::split(&editor) {
@@ -108,7 +125,10 @@ fn read_git_editor() -> Option<String> {
     ret
 }
 
-fn determine_editor() -> Result<String, Box<dyn Error>> {
+/// Inspect git core.editor setting, $EDITOR and $VISUAL for a command that opens an editor
+///
+/// If no editor is found, open vi
+pub fn determine_editor() -> Result<String, Box<dyn Error>> {
     if let Some(ret) = read_git_editor() {
         return Ok(ret);
     }
