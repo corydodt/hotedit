@@ -3,33 +3,12 @@ use shlex;
 use std::env;
 use std::error::Error;
 use std::fmt;
-use std::io::{Read, Write};
-use std::process;
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::process::Command;
 use tempfile::{Builder, NamedTempFile};
 
 const TEMP_EXT: &str = ".hotedit";
 const EDITOR_FALLBACK: &str = "vi";
-
-fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        println!("** not enough arguments");
-        process::exit(1);
-    }
-    let hehe = HotEdit::new(&args[1]);
-    match hehe.invoke() {
-        Ok(edited) => {
-            for line in edited.lines() {
-                println!("> {}", line);
-            }
-        }
-        Err(e) => {
-            println!("** bad edit: {}", e);
-            process::exit(1);
-        }
-    }
-}
 
 #[derive(Debug)]
 struct UnchangedError;
@@ -44,13 +23,6 @@ impl fmt::Display for UnchangedError {
 
 type EditorFindFn = fn() -> Result<String, Box<dyn Error>>;
 
-struct HotEdit<'he> {
-    initial: &'he String,
-    validate_unchanged: bool,
-    delete_temp: bool,
-    find_editor: EditorFindFn,
-}
-
 // create a named tempfile and seed it with initial text
 fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
     let mut ret = Builder::new().suffix(TEMP_EXT).tempfile()?;
@@ -61,6 +33,7 @@ fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
 // return the contents of the tempfile and clean it up
 fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> Result<String, Box<dyn Error>> {
     let mut buffer = String::new();
+    tf.seek(SeekFrom::Start(0))?;
     tf.read_to_string(&mut buffer)?;
     if persist {
         tf.keep()?;
@@ -70,8 +43,15 @@ fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> Result<String, Box<
     Ok(buffer)
 }
 
+pub struct HotEdit<'he> {
+    initial: &'he String,
+    validate_unchanged: bool,
+    delete_temp: bool,
+    find_editor: EditorFindFn,
+}
+
 impl<'he> HotEdit<'he> {
-    fn new(initial: &String) -> HotEdit {
+    pub fn new(initial: &String) -> HotEdit {
         HotEdit {
             initial,
             validate_unchanged: false,
@@ -80,7 +60,7 @@ impl<'he> HotEdit<'he> {
         }
     }
 
-    fn invoke(&self) -> Result<String, Box<dyn Error>> {
+    pub fn invoke(&self) -> Result<String, Box<dyn Error>> {
         let editor = (self.find_editor)()?;
         let mut argv = match shlex::split(&editor) {
             Some(r) => r,
