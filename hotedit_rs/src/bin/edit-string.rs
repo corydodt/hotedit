@@ -7,8 +7,8 @@ fn main() {
         println!("** not enough arguments");
         process::exit(1);
     }
-    let hehe = HotEdit::new(&args[1]);
-    match hehe.invoke() {
+    let hehe = HotEdit::new();
+    match hehe.invoke(&args[1]) {
         Ok(edited) => {
             for line in edited.lines() {
                 println!("> {}", line);

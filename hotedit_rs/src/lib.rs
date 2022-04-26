@@ -59,17 +59,15 @@ fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> Result<String, Box<
 ///   3. Wait for user to edit
 ///   4. Return the new text to the caller
 ///   5. (optionally) Delete the temp file.
-pub struct HotEdit<'he> {
-    initial: &'he String,
+pub struct HotEdit {
     validate_unchanged: bool,
     delete_temp: bool,
     find_editor: EditorFindFn,
 }
 
-impl<'he> HotEdit<'he> {
-    pub fn new(initial: &String) -> HotEdit {
+impl HotEdit {
+    pub fn new() -> HotEdit {
         HotEdit {
-            initial,
             validate_unchanged: false,
             delete_temp: true,
             find_editor: determine_editor,
@@ -77,7 +75,7 @@ impl<'he> HotEdit<'he> {
     }
 
     /// Invoke the hotedit operation, causing the editor to launch with initial text
-    pub fn invoke(&self) -> Result<String, Box<dyn Error>> {
+    pub fn invoke(&self, initial: &String) -> Result<String, Box<dyn Error>> {
         let editor = (self.find_editor)()?;
         let mut argv = match shlex::split(&editor) {
             Some(r) => r,
@@ -90,7 +88,7 @@ impl<'he> HotEdit<'he> {
         let mut cmd: Command;
         cmd = Command::new(argv.remove(0));
 
-        let tf = seed_tempfile(self.initial)?;
+        let tf = seed_tempfile(initial)?;
         argv.push(tf.path().to_str().unwrap().to_owned());
 
         cmd.args(argv);
@@ -98,7 +96,7 @@ impl<'he> HotEdit<'he> {
 
         let ret = harvest_tempfile(tf, !self.delete_temp)?;
         if self.validate_unchanged {
-            if self.initial.eq(&ret) {
+            if initial.eq(&ret) {
                 return Err(Box::from(UnchangedError));
             }
         }
