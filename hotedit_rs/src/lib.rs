@@ -101,6 +101,12 @@ impl HotEdit {
     }
 }
 
+impl Default for HotEdit {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn read_git_editor() -> Option<String> {
     let cfg = match git2::Config::open_default() {
         Ok(c) => c,
