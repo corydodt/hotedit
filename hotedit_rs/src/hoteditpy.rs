@@ -10,8 +10,16 @@ fn determine_editor() -> PyResult<String> {
 }
 
 #[pyfunction]
-fn invoke(initial: String) -> PyResult<String> {
-    let hehe = crate::HotEdit::new();
+fn invoke(
+    initial: String,
+    validate_unchanged: Option<bool>,
+    delete_temp: Option<bool>,
+) -> PyResult<String> {
+    let hehe = crate::HotEdit {
+        validate_unchanged: validate_unchanged.unwrap_or(false),
+        delete_temp: delete_temp.unwrap_or(true),
+        find_editor: crate::determine_editor,
+    };
     match hehe.invoke(&initial) {
         Ok(s) => Ok(s),
         Err(e) => {
@@ -22,7 +30,9 @@ fn invoke(initial: String) -> PyResult<String> {
     }
 }
 
-/// A Python module implemented in Rust.
+/// The hotedit module
+///
+/// (Contents mirror hotedit.editor from the pure py implementation)
 #[pymodule]
 #[pyo3(name = "hotedit")]
 fn hotedit(_py: Python, m: &PyModule) -> PyResult<()> {

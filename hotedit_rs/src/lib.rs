@@ -74,7 +74,7 @@ impl HotEdit {
         }
     }
 
-    /// Invoke the hotedit operation, causing the editor to launch with initial text
+    /// Invoke the hotedit operation; launches the editor with initial text
     pub fn invoke(&self, initial: &String) -> Result<String, Box<dyn Error>> {
         let editor = (self.find_editor)()?;
         let mut argv = match shlex::split(&editor) {
@@ -107,6 +107,7 @@ impl Default for HotEdit {
     }
 }
 
+/// Try to get an editor from git config
 fn read_git_editor() -> Option<String> {
     let cfg = match git2::Config::open_default() {
         Ok(c) => c,
