@@ -28,7 +28,8 @@ impl fmt::Display for UnchangedError {
 }
 
 /// zero-arg function to find an editor command and return it
-pub type EditorFindFn = fn() -> Result<String, Box<dyn Error>>;
+pub type ResultString = Result<String, Box<dyn Error>>;
+pub type EditorFindFn = fn() -> ResultString;
 
 /// create a named tempfile and seed it with initial text
 fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
@@ -40,7 +41,7 @@ fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
 /// return the contents of the tempfile and clean it up
 ///
 /// With `persist`, at the end of the operation, keep the file instead of deleting.
-fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> Result<String, Box<dyn Error>> {
+fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> ResultString {
     let mut buffer = String::new();
     tf.seek(SeekFrom::Start(0))?;
     tf.read_to_string(&mut buffer)?;
@@ -75,7 +76,7 @@ impl HotEdit {
     }
 
     /// Invoke the hotedit operation; launches the editor with initial text
-    pub fn invoke(&self, initial: &String) -> Result<String, Box<dyn Error>> {
+    pub fn invoke(&self, initial: &String) -> ResultString {
         let editor = (self.find_editor)()?;
         let mut argv = match shlex::split(&editor) {
             Some(r) => r,
@@ -124,7 +125,7 @@ fn read_git_editor() -> Option<String> {
 /// Inspect git core.editor setting, $EDITOR and $VISUAL for a command that opens an editor
 ///
 /// If no editor is found, open vi
-pub fn determine_editor() -> Result<String, Box<dyn Error>> {
+pub fn determine_editor() -> ResultString {
     if let Some(ret) = read_git_editor() {
         return Ok(ret);
     }
