@@ -29,7 +29,7 @@ impl fmt::Display for UnchangedError {
 
 /// zero-arg function to find an editor command and return it
 pub type ResultString = Result<String, Box<dyn Error>>;
-pub type EditorFindFn = fn() -> ResultString;
+pub type EditorFindFn = dyn Fn() -> ResultString;
 
 /// create a named tempfile and seed it with initial text
 fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
@@ -60,18 +60,18 @@ fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> ResultString {
 ///   3. Wait for user to edit
 ///   4. Return the new text to the caller
 ///   5. (optionally) Delete the temp file.
-pub struct HotEdit {
+pub struct HotEdit<'he> {
     validate_unchanged: bool,
     delete_temp: bool,
-    find_editor: EditorFindFn,
+    find_editor: &'he EditorFindFn,
 }
 
-impl HotEdit {
-    pub fn new() -> HotEdit {
+impl<'he> HotEdit<'he> {
+    pub fn new() -> HotEdit<'he> {
         HotEdit {
             validate_unchanged: false,
             delete_temp: true,
-            find_editor: determine_editor,
+            find_editor: &determine_editor,
         }
     }
 
@@ -102,7 +102,7 @@ impl HotEdit {
     }
 }
 
-impl Default for HotEdit {
+impl<'he> Default for HotEdit<'he> {
     fn default() -> Self {
         Self::new()
     }
