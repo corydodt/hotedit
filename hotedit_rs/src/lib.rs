@@ -3,7 +3,8 @@
 use std::env;
 use std::error::Error;
 use std::fmt;
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::fs::File;
+use std::io::{Read, Write};
 use std::process::Command;
 use tempfile::{Builder, NamedTempFile};
 
@@ -38,19 +39,16 @@ fn seed_tempfile(initial: &str) -> Result<NamedTempFile, Box<dyn Error>> {
     Ok(ret)
 }
 
-/// return the contents of the tempfile and clean it up
+/// clean up the temp file
 ///
 /// With `persist`, at the end of the operation, keep the file instead of deleting.
-fn harvest_tempfile(mut tf: NamedTempFile, persist: bool) -> ResultString {
-    let mut buffer = String::new();
-    tf.seek(SeekFrom::Start(0))?;
-    tf.read_to_string(&mut buffer)?;
+fn harvest_tempfile(tf: NamedTempFile, persist: bool) -> Result<(), Box<dyn Error>> {
     if persist {
         tf.keep()?;
     } else {
         tf.close()?;
     }
-    Ok(buffer)
+    Ok(())
 }
 
 /// A HotEdit operation
@@ -94,11 +92,20 @@ impl<'he> HotEdit<'he> {
         cmd.args(argv);
         cmd.status()?;
 
-        let ret = harvest_tempfile(tf, !self.delete_temp)?;
-        if self.validate_unchanged && initial.eq(&ret) {
+        // Some edit operations, but not all, edit the file in-place, while
+        // others do an atomic replace. To handle either case, reopen the file
+        // after the write has occurred so we're not reading from a stale inode.
+        let mut tf2 = File::open(tf.path())?;
+        let mut buffer = String::new();
+        tf2.read_to_string(&mut buffer)?;
+
+        // clean up
+        harvest_tempfile(tf, !self.delete_temp)?;
+
+        if self.validate_unchanged && initial.eq(&buffer) {
             return Err(Box::from(UnchangedError));
         }
-        Ok(ret)
+        Ok(buffer)
     }
 }
 
