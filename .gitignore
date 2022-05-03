@@ -8,3 +8,4 @@ __pycache__
 
 # rust
 hotedit_rs/target
+*.code-workspace
